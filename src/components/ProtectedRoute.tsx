@@ -27,14 +27,21 @@ export function AdminRoute({ children }: { children: ReactNode }) {
 }
 
 /** Faculty only — Firestore `users/{uid}.role === 'faculty'`. */
-export function FacultyRoute({ children }: { children: ReactNode }) {
+export function FacultyRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth()
-  const { loading: roleLoading, isFaculty } = useUserRole()
+  const { loading: roleLoading, role } = useUserRole()
 
   if (authLoading) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  if (roleLoading) return <LoadingSpinner label="Loading your profile…" />
-  if (!isFaculty) return <Navigate to="/" replace />
+
+  // 🧠 WAIT until role is loaded
+  if (roleLoading || role === null) {
+    return <LoadingSpinner label="Checking permissions..." />
+  }
+
+  if (role !== 'faculty') {
+    return <Navigate to="/" replace />
+  }
 
   return <>{children}</>
 }
