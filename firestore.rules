@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * App super-admins (same list as VITE_ADMIN_EMAILS). Can manage user roles.
+     */
+    function isAppAdmin() {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'admin@yourcollege.edu',
+        ];
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function isFaculty() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).data.role == 'faculty';
+    }
+
+    /** Faculty or app admin can moderate all achievements */
+    function canModerateAchievements() {
+      return isFaculty() || isAppAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (
+        request.auth.uid == userId || isAppAdmin()
+      );
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.userId == userId
+        && request.resource.data.role == 'student'
+        && request.resource.data.keys().hasAll(['userId', 'email', 'name', 'role']);
+      allow update: if signedIn() && (
+        isAppAdmin()
+        || (
+          request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+        )
+      );
+      allow delete: if false;
+    }
+
+    match /achievements/{docId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || canModerateAchievements()
+      );
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'userId', 'userEmail', 'userName', 'title', 'description', 'date',
+          'category', 'fileUrl', 'fileType', 'fileName', 'mimeType', 'createdAt'
+        ])
+        && request.resource.data.fileType in ['image', 'pdf'];
+      allow update: if false;
+      allow delete: if signedIn() && (
+        resource.data.userId == request.auth.uid || canModerateAchievements()
+      );
+    }
+
+    match /userStats/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && (request.auth.uid == userId || canModerateAchievements());
+      allow update: if signedIn() && (
+        request.auth.uid == userId || canModerateAchievements()
+      );
+      allow delete: if isAppAdmin();
+    }
+  }
+}
