@@ -3,11 +3,11 @@ import { useAuth } from '../context/AuthContext'
 
 export function Navbar() {
   const { user, logOut } = useAuth()
-  
 
   return (
-    <header className="border-b border-white/10 bg-white/5 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-xl">
+      
+      <div className="flex w-full items-center justify-between px-6 py-3">
         
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 font-semibold text-white">
@@ -19,8 +19,6 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-4">
-
-          {/* User */}
           {user && (
             <>
               {user.photoURL && (

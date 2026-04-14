@@ -11,6 +11,7 @@ export interface Achievement {
   userId: string
   userEmail: string
   userName: string
+  userUsn?: string
   title: string
   description: string
   date: string

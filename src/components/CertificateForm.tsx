@@ -1,3 +1,4 @@
+import { useUserProfile } from '../context/UserProfileContext'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { ACHIEVEMENT_CATEGORIES } from '../constants/categories'
@@ -11,7 +12,10 @@ const ACCEPT = 'application/pdf,image/jpeg,image/png,image/webp,image/gif'
 
 export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
   const { user } = useAuth()
+  const { profile } = useUserProfile()
+
   const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
@@ -25,10 +29,12 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
       URL.revokeObjectURL(previewUrl)
       setPreviewUrl(null)
     }
+
     if (!f) {
       setFile(null)
       return
     }
+
     try {
       validateCertificateFile(f)
     } catch (err: unknown) {
@@ -37,7 +43,9 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
       setFile(null)
       return
     }
+
     setFile(f)
+
     if (f.type.startsWith('image/')) {
       setPreviewUrl(URL.createObjectURL(f))
     }
@@ -45,148 +53,180 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!user) return
+
+    if (!user || !profile) return
+
+    // 🔥 IMPORTANT FIX
+    if (!profile.name || !profile.usn) {
+      toast.error('Please complete your profile (Name + USN)')
+      return
+    }
+
     if (!file) {
       toast.error('Choose a PDF or image file.')
       return
     }
-    const input: AchievementInput = { title, description, date, category }
+
+    const input: AchievementInput = {
+      title,
+      description,
+      date,
+      category,
+    }
+
     if (!input.title.trim()) {
       toast.error('Title is required.')
       return
     }
+
     setSubmitting(true)
+
     try {
       await createAchievement(
-        user.uid,
-        user.email ?? '',
-        user.displayName ?? user.email ?? 'Student',
+        profile.userId,
+        profile.name, // ✅ YOUR NAME
+        profile.usn,  // ✅ YOUR USN
         input,
         file,
       )
+
       toast.success('Achievement saved')
+
       setTitle('')
       setDescription('')
       setDate(new Date().toISOString().slice(0, 10))
       setCategory('Academic')
       onFileChange(null)
+
       if (fileInputRef.current) fileInputRef.current.value = ''
+
       onSubmitted()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed'
-      toast.error(msg)
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       setSubmitting(false)
     }
   }
 
   const isImage = file?.type.startsWith('image/')
-  const isPdf = file?.type === 'application/pdf' || file?.name.toLowerCase().endsWith('.pdf')
+  const isPdf =
+    file?.type === 'application/pdf' ||
+    file?.name.toLowerCase().endsWith('.pdf')
 
   return (
     <form
       onSubmit={(e) => void handleSubmit(e)}
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+      className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6"
     >
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Add achievement</h2>
-      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Upload a certificate (PDF or image) and add details. You can preview images before
-        uploading.
+      <h2 className="text-lg font-semibold text-white">Add achievement</h2>
+
+      <p className="mt-1 text-sm text-slate-400">
+        Upload a certificate (PDF or image) and add details. You can preview images before uploading.
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
+
+        {/* Title */}
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Title</span>
+          <span className="text-sm">Title</span>
           <input
-            required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+            className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
             placeholder="e.g. Regional hackathon winner"
           />
         </label>
+
+        {/* Description */}
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Description</span>
+          <span className="text-sm">Description</span>
           <textarea
-            required
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+            className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
             placeholder="What did you achieve?"
           />
         </label>
+
+        {/* Date */}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Date</span>
+          <span className="text-sm">Date</span>
           <input
             type="date"
-            required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+            className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
           />
         </label>
+
+        {/* Category */}
         <label className="block">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Category</span>
+          <span className="text-sm">Category</span>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value as AchievementCategory)}
-            className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+            onChange={(e) =>
+              setCategory(e.target.value as AchievementCategory)
+            }
+            className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
           >
             {ACHIEVEMENT_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+              <option key={c}>{c}</option>
             ))}
           </select>
         </label>
+
+        {/* File */}
         <label className="block sm:col-span-2">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            Certificate file
+          <span className="text-sm">Certificate file</span>
+
+          <span className="block text-xs text-slate-400 mt-1">
+            PDF or image (JPEG, PNG, WebP, GIF). Max {Math.round(MAX_CERTIFICATE_BYTES / (1024 * 1024))} MB.
           </span>
-          <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
-            PDF or image (JPEG, PNG, WebP, GIF). Max {Math.round(MAX_CERTIFICATE_BYTES / (1024 * 1024))}{' '}
-            MB. Uploaded via Cloudinary.
-          </span>
+
           <input
             ref={fileInputRef}
             type="file"
             accept={ACCEPT}
-            required
             onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-            className="mt-1 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-500 dark:text-slate-400"
+            className="mt-2 block w-full text-sm text-slate-400 
+            file:mr-3 
+            file:rounded-lg 
+            file:border-0 
+            file:bg-gradient-to-r 
+            file:from-purple-500 
+            file:to-indigo-600 
+            file:px-4 
+            file:py-2 
+            file:text-sm 
+            file:font-medium 
+            file:text-white 
+            hover:file:scale-105 
+            file:transition"
           />
         </label>
       </div>
 
+      {/* Preview */}
       {file && (
-        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Preview</p>
+        <div className="mt-6">
           {previewUrl && isImage && (
-            <img
-              src={previewUrl}
-              alt="Certificate preview"
-              className="mt-3 max-h-64 w-full rounded-lg object-contain shadow-md"
-            />
+            <img src={previewUrl} className="rounded-xl max-h-64" />
           )}
           {isPdf && (
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-              PDF selected: <strong>{file.name}</strong> — preview not shown; it will upload as-is.
-            </p>
-          )}
-          {!isImage && !isPdf && file && (
-            <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">
-              Unsupported preview type. Allowed: PDF, JPEG, PNG, WebP, GIF.
+            <p className="text-sm text-slate-400 mt-2">
+              PDF selected: {file.name}
             </p>
           )}
         </div>
       )}
 
+      {/* BUTTON */}
       <div className="mt-6">
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-8"
+          className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white"
         >
           {submitting ? 'Uploading…' : 'Save achievement'}
         </button>

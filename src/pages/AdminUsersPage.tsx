@@ -9,6 +9,7 @@ export function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
+  // 🔄 Load users
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -25,11 +26,16 @@ export function AdminUsersPage() {
     void load()
   }, [load])
 
+  // 🔁 Change role
   async function changeRole(userId: string, next: UserRole) {
     setUpdatingId(userId)
     try {
       await setUserRole(userId, next)
-      toast.success(next === 'faculty' ? 'Promoted to faculty' : 'Role set to student')
+      toast.success(
+        next === 'faculty'
+          ? 'Promoted to faculty'
+          : 'Demoted to student'
+      )
       await load()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Update failed')
@@ -40,67 +46,92 @@ export function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+
+      {/* 🔹 HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">User roles (admin)</h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">
-          Promote accounts to <strong>faculty</strong> so they can open the Faculty panel. New
-          sign-ins default to <strong>student</strong>.
+        <h1 className="text-2xl font-bold text-white">
+          User Roles (Admin Panel)
+        </h1>
+        <p className="text-slate-400 text-sm mt-1">
+          Manage users and assign faculty roles
         </p>
       </div>
 
+      {/* 🔹 LOADING */}
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
+        <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
+          
+          <table className="w-full text-left text-sm">
+
+            {/* 🔹 TABLE HEADER */}
+            <thead className="border-b border-white/10 text-slate-300">
               <tr>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Name</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Email</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Role</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Actions</th>
+                <th className="px-4 py-3">Student</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
+
+            {/* 🔹 TABLE BODY */}
             <tbody>
               {users.map((u) => (
-                <tr key={u.userId} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{u.name}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{u.email}</td>
+                <tr
+                  key={u.userId}
+                  className="border-b border-white/5 last:border-0"
+                >
+
+                  {/* 👤 NAME + USN */}
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-white">
+                        {u.name || 'No Name'}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {u.usn || 'No USN'}
+                      </p>
+                    </div>
+                  </td>
+
+                  {/* 🎭 ROLE */}
                   <td className="px-4 py-3">
                     <span
                       className={
                         u.role === 'faculty'
-                          ? 'rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-800 dark:bg-violet-950 dark:text-violet-200'
-                          : 'rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                          ? 'px-2 py-1 text-xs rounded-full bg-purple-600/20 text-purple-300'
+                          : 'px-2 py-1 text-xs rounded-full bg-gray-600/20 text-gray-300'
                       }
                     >
                       {u.role}
                     </span>
                   </td>
+
+                  {/* ⚙️ ACTION */}
                   <td className="px-4 py-3">
                     {u.role === 'student' ? (
                       <button
-                        type="button"
                         disabled={updatingId === u.userId}
-                        onClick={() => void changeRole(u.userId, 'faculty')}
-                        className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+                        onClick={() => changeRole(u.userId, 'faculty')}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50"
                       >
-                        {updatingId === u.userId ? '…' : 'Promote to faculty'}
+                        {updatingId === u.userId ? '...' : 'Promote'}
                       </button>
                     ) : (
                       <button
-                        type="button"
                         disabled={updatingId === u.userId}
-                        onClick={() => void changeRole(u.userId, 'student')}
-                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        onClick={() => changeRole(u.userId, 'student')}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50"
                       >
-                        {updatingId === u.userId ? '…' : 'Demote to student'}
+                        {updatingId === u.userId ? '...' : 'Demote'}
                       </button>
                     )}
                   </td>
+
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       )}

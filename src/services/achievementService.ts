@@ -19,6 +19,7 @@ import type { Achievement, AchievementInput } from '../types/achievement'
 const ACHIEVEMENTS = 'achievements'
 const STATS = 'userStats'
 
+// ================= FILE TYPE =================
 function inferFileType(data: Record<string, unknown>): Achievement['fileType'] {
   const ft = data.fileType as string | undefined
   if (ft === 'image' || ft === 'pdf') return ft
@@ -27,12 +28,13 @@ function inferFileType(data: Record<string, unknown>): Achievement['fileType'] {
   return 'image'
 }
 
+// ================= MAP DOC =================
 function mapDoc(id: string, data: Record<string, unknown>): Achievement {
   return {
     id,
     userId: data.userId as string,
-    userEmail: data.userEmail as string,
     userName: data.userName as string,
+    userUsn: data.userUsn as string, // ✅ NEW
     title: data.title as string,
     description: data.description as string,
     date: data.date as string,
@@ -45,10 +47,11 @@ function mapDoc(id: string, data: Record<string, unknown>): Achievement {
   }
 }
 
+// ================= CREATE =================
 export async function createAchievement(
   userId: string,
-  userEmail: string,
   userName: string,
+  userUsn: string,
   input: AchievementInput,
   file: File,
 ): Promise<void> {
@@ -57,11 +60,13 @@ export async function createAchievement(
 
   const database = requireDb()
   const batch = writeBatch(database)
+
   const achRef = doc(collection(database, ACHIEVEMENTS))
+
   batch.set(achRef, {
     userId,
-    userEmail,
-    userName,
+    userName,       // ✅ FIXED
+    userUsn,        // ✅ NEW
     title: input.title.trim(),
     description: input.description.trim(),
     date: input.date,
@@ -72,21 +77,25 @@ export async function createAchievement(
     mimeType: file.type || 'application/octet-stream',
     createdAt: serverTimestamp(),
   })
+
+  // 🔥 FIXED STATS
   const statRef = doc(database, STATS, userId)
   batch.set(
     statRef,
     {
       userId,
-      email: userEmail,
-      displayName: userName,
+      name: userName,     // ✅ FIXED
+      usn: userUsn,       // ✅ NEW
       count: increment(1),
       updatedAt: serverTimestamp(),
     },
     { merge: true },
   )
+
   await batch.commit()
 }
 
+// ================= USER DATA =================
 export async function listMyAchievements(userId: string): Promise<Achievement[]> {
   const database = requireDb()
   const q = query(
@@ -94,22 +103,27 @@ export async function listMyAchievements(userId: string): Promise<Achievement[]>
     where('userId', '==', userId),
     orderBy('createdAt', 'desc'),
   )
+
   const snap = await getDocs(q)
   return snap.docs.map((d) => mapDoc(d.id, d.data() as Record<string, unknown>))
 }
 
-/** Admin: all achievements (ordered by createdAt desc) */
+// ================= ALL DATA =================
 export async function listAllAchievements(): Promise<Achievement[]> {
   const database = requireDb()
   const q = query(collection(database, ACHIEVEMENTS), orderBy('createdAt', 'desc'))
+
   const snap = await getDocs(q)
   return snap.docs.map((d) => mapDoc(d.id, d.data() as Record<string, unknown>))
 }
 
+// ================= DELETE =================
 export async function deleteAchievement(ach: Achievement): Promise<void> {
   const database = requireDb()
   const batch = writeBatch(database)
+
   batch.delete(doc(database, ACHIEVEMENTS, ach.id))
+
   const statRef = doc(database, STATS, ach.userId)
   batch.set(
     statRef,
@@ -119,20 +133,24 @@ export async function deleteAchievement(ach: Achievement): Promise<void> {
     },
     { merge: true },
   )
+
   await batch.commit()
 }
 
+// ================= LEADERBOARD =================
 export async function fetchLeaderboard(limitCount = 50) {
   const database = requireDb()
   const q = query(collection(database, STATS), orderBy('count', 'desc'))
+
   const snap = await getDocs(q)
+
   return snap.docs
     .map((d) => {
       const x = d.data()
       return {
         userId: d.id,
-        email: (x.email as string) || '',
-        displayName: (x.displayName as string) || 'Student',
+        name: (x.name as string) || 'Student',   // ✅ FIXED
+        usn: (x.usn as string) || '',            // ✅ NEW
         count: Number(x.count) || 0,
       }
     })
