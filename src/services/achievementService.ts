@@ -65,6 +65,7 @@ export async function createAchievement(
 
   batch.set(achRef, {
     userId,
+    userEmail,
     userName,       // ✅ FIXED
     userUsn,        // ✅ NEW
     title: input.title.trim(),
