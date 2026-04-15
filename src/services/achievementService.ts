@@ -33,8 +33,9 @@ function mapDoc(id: string, data: Record<string, unknown>): Achievement {
   return {
     id,
     userId: data.userId as string,
+    userEmail: data.userEmail as string,   // ✅ FIXED
     userName: data.userName as string,
-    userUsn: data.userUsn as string, // ✅ NEW
+    userUsn: data.userUsn as string,
     title: data.title as string,
     description: data.description as string,
     date: data.date as string,
@@ -50,6 +51,7 @@ function mapDoc(id: string, data: Record<string, unknown>): Achievement {
 // ================= CREATE =================
 export async function createAchievement(
   userId: string,
+  userEmail: string,   // ✅ FIXED
   userName: string,
   userUsn: string,
   input: AchievementInput,
@@ -65,9 +67,9 @@ export async function createAchievement(
 
   batch.set(achRef, {
     userId,
-    userEmail,
-    userName,       // ✅ FIXED
-    userUsn,        // ✅ NEW
+    userEmail,   // ✅ FIXED
+    userName,
+    userUsn,
     title: input.title.trim(),
     description: input.description.trim(),
     date: input.date,
@@ -79,14 +81,15 @@ export async function createAchievement(
     createdAt: serverTimestamp(),
   })
 
-  // 🔥 FIXED STATS
+  // ================= STATS =================
   const statRef = doc(database, STATS, userId)
   batch.set(
     statRef,
     {
       userId,
-      name: userName,     // ✅ FIXED
-      usn: userUsn,       // ✅ NEW
+      name: userName,
+      usn: userUsn,
+      email: userEmail, // ✅ IMPORTANT FOR LEADERBOARD
       count: increment(1),
       updatedAt: serverTimestamp(),
     },
@@ -150,8 +153,9 @@ export async function fetchLeaderboard(limitCount = 50) {
       const x = d.data()
       return {
         userId: d.id,
-        name: (x.name as string) || 'Student',   // ✅ FIXED
-        usn: (x.usn as string) || '',            // ✅ NEW
+        name: (x.name as string) || 'Student',
+        usn: (x.usn as string) || '',
+        email: (x.email as string) || '', // ✅ FIXED
         count: Number(x.count) || 0,
       }
     })

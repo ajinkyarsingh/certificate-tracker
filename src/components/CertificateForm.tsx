@@ -84,6 +84,7 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
     try {
       await createAchievement(
         profile.userId,
+        profile.email,
         profile.name, // ✅ YOUR NAME
         profile.usn,  // ✅ YOUR USN
         input,
