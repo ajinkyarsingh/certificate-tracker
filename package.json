@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "install": "npm install --legacy-peer-deps"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -25,7 +24,6 @@
     "react-dom": "^19.2.5",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.14.0",
-    "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5"
   }
 }
