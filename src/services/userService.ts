@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 import type { User } from 'firebase/auth'
 import { requireDb } from './firebase'
-import type { UserProfile, UserRole, Branch } from '../types/user'
+import type { UserProfile, Branch } from '../types/user'
 
 
 const USERS = 'users'
