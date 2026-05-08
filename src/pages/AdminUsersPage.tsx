@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { listAllUsers, setUserRole } from '../services/userService'
 import type { UserProfile, UserRole } from '../types/user'
 
 export function AdminUsersPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
@@ -46,6 +49,31 @@ export function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
+      {/* Top nav tabs */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/admin')}
+          className={[
+            'px-4 py-2 rounded-xl border border-white/10 backdrop-blur-xl',
+            'transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]',
+            location.pathname === '/admin' ? 'bg-white/10' : 'bg-white/5',
+          ].join(' ')}
+        >
+          User Roles
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/admin/analytics')}
+          className={[
+            'px-4 py-2 rounded-xl border border-white/10 backdrop-blur-xl',
+            'transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]',
+            location.pathname === '/admin/analytics' ? 'bg-white/10' : 'bg-white/5',
+          ].join(' ')}
+        >
+          Analytics
+        </button>
+      </div>
 
       {/* 🔹 HEADER */}
       <div>
@@ -113,7 +141,7 @@ export function AdminUsersPage() {
                       <button
                         disabled={updatingId === u.userId}
                         onClick={() => changeRole(u.userId, 'faculty')}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-50 transition-all duration-200"
                       >
                         {updatingId === u.userId ? '...' : 'Promote'}
                       </button>
@@ -121,7 +149,7 @@ export function AdminUsersPage() {
                       <button
                         disabled={updatingId === u.userId}
                         onClick={() => changeRole(u.userId, 'student')}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 transition-all duration-200"
                       >
                         {updatingId === u.userId ? '...' : 'Demote'}
                       </button>

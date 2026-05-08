@@ -33,13 +33,19 @@ function mapDoc(id: string, data: Record<string, unknown>): Achievement {
   return {
     id,
     userId: data.userId as string,
-    userEmail: data.userEmail as string,   // ✅ FIXED
+    userEmail: data.userEmail as string,
     userName: data.userName as string,
     userUsn: data.userUsn as string,
+
+    userBranch: (data.userBranch as string) || '',
+    userJoinYear: Number(data.userJoinYear || 0),
+    userYear: (data.userYear as string) || '',
+
     title: data.title as string,
     description: data.description as string,
     date: data.date as string,
     category: data.category as string,
+
     fileUrl: data.fileUrl as string,
     fileType: inferFileType(data),
     fileName: data.fileName as string,
@@ -51,11 +57,14 @@ function mapDoc(id: string, data: Record<string, unknown>): Achievement {
 // ================= CREATE =================
 export async function createAchievement(
   userId: string,
-  userEmail: string,   // ✅ FIXED
+  userEmail: string,
   userName: string,
   userUsn: string,
+  userBranch: string,
+  userJoinYear: number,
   input: AchievementInput,
   file: File,
+  userYear: string,
 ): Promise<void> {
   const fileType = getCertificateFileType(file)
   const fileUrl = await uploadToCloudinary(file)
@@ -67,13 +76,18 @@ export async function createAchievement(
 
   batch.set(achRef, {
     userId,
-    userEmail,   // ✅ FIXED
+    userEmail,
     userName,
     userUsn,
+    userBranch,
+    userJoinYear,
+    userYear,
+
     title: input.title.trim(),
     description: input.description.trim(),
     date: input.date,
     category: input.category,
+
     fileUrl,
     fileType,
     fileName: file.name,
@@ -81,7 +95,6 @@ export async function createAchievement(
     createdAt: serverTimestamp(),
   })
 
-  // ================= STATS =================
   const statRef = doc(database, STATS, userId)
   batch.set(
     statRef,
@@ -89,7 +102,7 @@ export async function createAchievement(
       userId,
       name: userName,
       usn: userUsn,
-      email: userEmail, // ✅ IMPORTANT FOR LEADERBOARD
+      email: userEmail,
       count: increment(1),
       updatedAt: serverTimestamp(),
     },
@@ -99,9 +112,23 @@ export async function createAchievement(
   await batch.commit()
 }
 
-// ================= USER DATA =================
-export async function listMyAchievements(userId: string): Promise<Achievement[]> {
+// ================= FETCH ALL =================
+export async function listAllAchievements(): Promise<Achievement[]> {
   const database = requireDb()
+  const q = query(collection(database, ACHIEVEMENTS), orderBy('createdAt', 'desc'))
+
+  const snap = await getDocs(q)
+  return snap.docs.map((d) =>
+    mapDoc(d.id, d.data() as Record<string, unknown>)
+  )
+}
+
+// ================= FETCH USER =================
+export async function listMyAchievements(
+  userId: string,
+): Promise<Achievement[]> {
+  const database = requireDb()
+
   const q = query(
     collection(database, ACHIEVEMENTS),
     where('userId', '==', userId),
@@ -109,16 +136,10 @@ export async function listMyAchievements(userId: string): Promise<Achievement[]>
   )
 
   const snap = await getDocs(q)
-  return snap.docs.map((d) => mapDoc(d.id, d.data() as Record<string, unknown>))
-}
 
-// ================= ALL DATA =================
-export async function listAllAchievements(): Promise<Achievement[]> {
-  const database = requireDb()
-  const q = query(collection(database, ACHIEVEMENTS), orderBy('createdAt', 'desc'))
-
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => mapDoc(d.id, d.data() as Record<string, unknown>))
+  return snap.docs.map((d) =>
+    mapDoc(d.id, d.data() as Record<string, unknown>)
+  )
 }
 
 // ================= DELETE =================
@@ -144,6 +165,7 @@ export async function deleteAchievement(ach: Achievement): Promise<void> {
 // ================= LEADERBOARD =================
 export async function fetchLeaderboard(limitCount = 50) {
   const database = requireDb()
+
   const q = query(collection(database, STATS), orderBy('count', 'desc'))
 
   const snap = await getDocs(q)
@@ -155,7 +177,7 @@ export async function fetchLeaderboard(limitCount = 50) {
         userId: d.id,
         name: (x.name as string) || 'Student',
         usn: (x.usn as string) || '',
-        email: (x.email as string) || '', // ✅ FIXED
+        email: (x.email as string) || '',
         count: Number(x.count) || 0,
       }
     })

@@ -8,13 +8,15 @@ export default function ProfileSetup() {
 
   const [name, setName] = useState('')
   const [usn, setUsn] = useState('')
+  const [joinYear, setJoinYear] = useState('')
+  const [branch, setBranch] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSave = async () => {
     if (!user) return
 
-    if (!name || !usn) {
-      alert('Please fill all fields')
+    if (!name || !usn || !joinYear || !branch) {
+      alert('Fill all fields')
       return
     }
 
@@ -25,14 +27,13 @@ export default function ProfileSetup() {
       await updateDoc(doc(db, 'users', user.uid), {
         name,
         usn,
+        joinYear: Number(joinYear),
+        branch,
       })
 
-      // reload app after saving
       window.location.reload()
-
-    } catch (err) {
-      console.error(err)
-      alert('Error saving profile')
+    } catch {
+      alert('Error saving')
     } finally {
       setLoading(false)
     }
@@ -40,32 +41,57 @@ export default function ProfileSetup() {
 
   return (
     <div className="flex items-center justify-center min-h-screen px-4">
-      <div className="w-full max-w-md bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6">
-        
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          Complete your profile
-        </h2>
+      <div className="w-full max-w-md bg-white/5 p-6 rounded-2xl">
+
+        <h2 className="text-xl mb-4 text-center">Complete Profile</h2>
 
         <input
-          type="text"
-          placeholder="Full Name"
-          className="w-full mb-3 p-2 rounded bg-black/40 outline-none"
+          placeholder="Name"
+          className="w-full mb-3 p-2 bg-black/40 rounded"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
 
         <input
-          type="text"
           placeholder="USN"
-          className="w-full mb-4 p-2 rounded bg-black/40 outline-none"
+          className="w-full mb-3 p-2 bg-black/40 rounded"
           value={usn}
           onChange={(e) => setUsn(e.target.value)}
         />
 
+        {/* JOIN YEAR */}
+        <select
+          value={joinYear}
+          onChange={(e) => setJoinYear(e.target.value)}
+          className="w-full mb-3 p-2 bg-black/40 rounded"
+        >
+          <option value="">Select Joining Year</option>
+          <option>2022</option>
+          <option>2023</option>
+          <option>2024</option>
+          <option>2025</option>
+        </select>
+
+        {/* BRANCH */}
+        <select
+          value={branch}
+          onChange={(e) => setBranch(e.target.value)}
+          className="w-full mb-4 p-2 bg-black/40 rounded"
+        >
+          <option value="">Select Branch</option>
+          <option>CSE</option>
+          <option>CSE(AIML)</option>
+          <option>EEE</option>
+          <option>ECE</option>
+          <option>MECH</option>
+          <option>CIVIL</option>
+          <option>IS</option>
+          <option>ARCH</option>
+        </select>
+
         <button
           onClick={handleSave}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 py-2 rounded-xl"
+          className="w-full bg-purple-600 py-2 rounded"
         >
           {loading ? 'Saving...' : 'Continue'}
         </button>

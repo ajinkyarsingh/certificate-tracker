@@ -1,9 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { AdminRoute, FacultyRoute, ProtectedRoute } from './components/ProtectedRoute'
+import { AdminAnalyticsPage } from './pages/AdminAnalyticsPage'
 import { AdminUsersPage } from './pages/AdminUsersPage'
 import { DashboardPage } from './pages/Dashboard'
-import { FacultyPanelPage } from './pages/FacultyPanel'
+import { FacultyPanel } from './pages/FacultyPanel' // ✅ FIXED
 import { LeaderboardPage } from './pages/Leaderboard'
 import { LoginPage } from './pages/Login'
 import { SetupPage } from './pages/SetupPage'
@@ -14,6 +15,7 @@ export function App() {
       <Layout>
         <div className="max-w-7xl mx-auto px-4 py-6">
           <Routes>
+
             <Route path="/setup" element={<SetupPage />} />
             <Route path="/login" element={<LoginPage />} />
 
@@ -39,7 +41,7 @@ export function App() {
               path="/faculty"
               element={
                 <FacultyRoute>
-                  <FacultyPanelPage />
+                  <FacultyPanel /> {/* ✅ FIXED */}
                 </FacultyRoute>
               }
             />
@@ -49,6 +51,15 @@ export function App() {
               element={
                 <AdminRoute>
                   <AdminUsersPage />
+                </AdminRoute>
+              }
+            />
+
+            <Route
+              path="/admin/analytics"
+              element={
+                <AdminRoute>
+                  <AdminAnalyticsPage />
                 </AdminRoute>
               }
             />

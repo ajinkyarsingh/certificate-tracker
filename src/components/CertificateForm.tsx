@@ -19,6 +19,7 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [userYear, setUserYear] = useState('')
   const [category, setCategory] = useState<AchievementCategory>('Academic')
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -79,6 +80,11 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
       return
     }
 
+    if (!userYear) {
+      toast.error('Year of Study is required.')
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -87,8 +93,11 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
         profile.email,
         profile.name, // ✅ YOUR NAME
         profile.usn,  // ✅ YOUR USN
+        profile.branch,
+        profile.joinYear,
         input,
         file,
+        userYear,
       )
 
       toast.success('Achievement saved')
@@ -96,6 +105,7 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
       setTitle('')
       setDescription('')
       setDate(new Date().toISOString().slice(0, 10))
+      setUserYear('')
       setCategory('Academic')
       onFileChange(null)
 
@@ -152,13 +162,29 @@ export function CertificateForm({ onSubmitted }: { onSubmitted: () => void }) {
 
         {/* Date */}
         <label className="block">
-          <span className="text-sm">Date</span>
+          <span className="text-sm">Date of Achievement</span>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
           />
+        </label>
+
+        {/* Year of Study */}
+        <label className="block">
+          <span className="text-sm">Year of Study</span>
+          <select
+            value={userYear}
+            onChange={(e) => setUserYear(e.target.value)}
+            className="mt-1 w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2"
+          >
+            <option value="">Select year</option>
+            <option>1st</option>
+            <option>2nd</option>
+            <option>3rd</option>
+            <option>4th</option>
+          </select>
         </label>
 
         {/* Category */}

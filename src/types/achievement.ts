@@ -12,6 +12,7 @@ export interface Achievement {
   userEmail: string
   userName: string
   userUsn: string
+  userYear?: '1st' | '2nd' | '3rd' | '4th' | string
   title: string
   description: string
   date: string
